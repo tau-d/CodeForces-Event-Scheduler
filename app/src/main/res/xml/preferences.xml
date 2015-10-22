@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_category_title_general">
+        <ListPreference
+            android:key="@string/pref_key_calendar"
+            android:summary="@string/pref_summary_calendar"
+            android:title="@string/pref_title_calendar"
+            android:defaultValue="1" />
+
+        <Preference android:title="@string/pref_title_reminders"
+            android:summary="@string/pref_summary_reminders" >
+            <intent android:targetPackage="tau.david.codeforceseventscheduler"
+                    android:targetClass="tau.david.codeforceseventscheduler.settings.EventReminderSettingsActivity" />
+        </Preference>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_title_event_types">
+        <CheckBoxPreference android:key="@string/pref_key_div1"
+            android:summary="@string/pref_summary_div1"
+            android:title="@string/pref_title_div1"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference android:key="@string/pref_key_div2"
+            android:summary="@string/pref_summary_div2"
+            android:title="@string/pref_title_div2"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference android:key="@string/pref_key_other"
+            android:summary="@string/pref_summary_other"
+            android:title="@string/pref_title_other"
+            android:defaultValue="true" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

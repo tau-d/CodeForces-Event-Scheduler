@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <LinearLayout android:id="@+id/spinner_container"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:gravity="center_vertical"
+                  android:layout_alignParentLeft="true"
+                  android:layout_alignParentTop="true"
+                  android:layout_toLeftOf="@+id/delete_reminder_button">
+
+        <Spinner android:id="@+id/reminder_type_spinner"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:layout_weight="1"/>
+
+        <Spinner android:id="@+id/reminder_time_spinner"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:layout_weight="1"/>
+    </LinearLayout>
+
+    <Button android:id="@+id/delete_reminder_button"
+            android:layout_width="wrap_content"
+            android:minWidth="1dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:text="X"
+            android:textAlignment="center"/>
+
+</RelativeLayout>

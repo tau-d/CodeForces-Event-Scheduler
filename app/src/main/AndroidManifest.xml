@@ -1,0 +1,50 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="tau.david.codeforceseventscheduler">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+
+        <activity
+            android:name="tau.david.codeforceseventscheduler.MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name="tau.david.codeforceseventscheduler.receivers.BootReceiver"
+            android:enabled="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name="tau.david.codeforceseventscheduler.receivers.SchedulerReceiver" />
+
+        <activity
+            android:name="tau.david.codeforceseventscheduler.settings.SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:parentActivityName="tau.david.codeforceseventscheduler.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="tau.david.codeforceseventscheduler.MainActivity" />
+        </activity>
+
+        <activity
+            android:name="tau.david.codeforceseventscheduler.settings.EventReminderSettingsActivity"
+            android:label="@string/title_activity_event_notification_settings" >
+        </activity>
+    </application>
+
+</manifest>
