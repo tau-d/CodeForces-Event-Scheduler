@@ -12,10 +12,6 @@ import android.provider.CalendarContract;
 import android.util.Log;
 import android.widget.Toast;
 
-import tau.david.codeforceseventscheduler.MainActivity;
-import tau.david.codeforceseventscheduler.R;
-import tau.david.codeforceseventscheduler.settings.EventReminderSettingsActivity;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,8 +22,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Set;
 import java.util.TimeZone;
+
+import tau.david.codeforceseventscheduler.MainActivity;
+import tau.david.codeforceseventscheduler.R;
+import tau.david.codeforceseventscheduler.settings.EventReminder;
 
 
 public class SchedulerTask extends AsyncTask<Void, Void, Void> {
@@ -68,7 +67,7 @@ public class SchedulerTask extends AsyncTask<Void, Void, Void> {
                 String enter = "Enter »";
                 if (eventName.endsWith(enter)) {
                     eventName = eventName.substring(0, eventName.length() - enter.length()).trim();
-                };
+                }
 
                 long startMillis = getStartMillis(startString);
                 long endMillis = getEndMillis(startMillis, durationString);
@@ -145,7 +144,7 @@ public class SchedulerTask extends AsyncTask<Void, Void, Void> {
         return event;
     }
 
-    private void insertReminder(long eventID, int minutes, int reminderType) {
+    private void insertReminder(long eventID, int reminderType, int minutes) {
         ContentResolver cr = context.getContentResolver();
         ContentValues values = new ContentValues();
         values.put(CalendarContract.Reminders.MINUTES, minutes);
@@ -158,10 +157,13 @@ public class SchedulerTask extends AsyncTask<Void, Void, Void> {
 
     private void insertAllReminders(long eventId) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        Set<String> set = prefs.getStringSet(context.getString(R.string.pref_key_reminders), null);
-        for (String reminder : set) {
-            String[] split = reminder.split(EventReminderSettingsActivity.EventReminder.SEPARATOR);
-            insertReminder(eventId, Integer.parseInt(split[1]), Integer.parseInt(split[0]));
+        String reminders = prefs.getString(context.getString(R.string.pref_key_reminders), null);
+
+        if (reminders != null) {
+            List<EventReminder> list = EventReminder.getEventReminderListFromString(reminders);
+            for (EventReminder er : list) {
+                insertReminder(eventId, er.getReminderType(), er.getMinutesBefore());
+            }
         }
     }
 

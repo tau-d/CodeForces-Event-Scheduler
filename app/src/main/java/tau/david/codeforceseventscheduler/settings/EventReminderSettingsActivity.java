@@ -17,12 +17,10 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 
-import tau.david.codeforceseventscheduler.R;
-
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
+import tau.david.codeforceseventscheduler.R;
 
 public class EventReminderSettingsActivity extends AppCompatActivity {
 
@@ -74,13 +72,11 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
         }
 
         private void loadReminders() {
-            Set<String> reminders = prefs.getStringSet(mActivity.getString(R.string.pref_key_reminders), null);
+            String reminders = prefs.getString(mActivity.getString(R.string.pref_key_reminders), null);
 
             if (reminders != null) {
-                for (String s : reminders) {
-                    String[] parts = s.split(EventReminder.SEPARATOR);
-                    items.add(new EventReminder(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));
-                }
+                List<EventReminder> list = EventReminder.getEventReminderListFromString(reminders);
+                items.addAll(list);
             }
         }
 
@@ -91,11 +87,8 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
 
         private void savePrefs() {
             SharedPreferences.Editor editor = prefs.edit();
-            Set<String> set = new HashSet<String>();
-            for (EventReminder reminder : items) {
-                set.add(reminder.toString());
-            }
-            editor.putStringSet(mActivity.getApplicationContext().getString(R.string.pref_key_reminders), set);
+            editor.putString(mActivity.getApplicationContext().getString(R.string.pref_key_reminders),
+                    EventReminder.getStringFromEventReminderList(items));
             editor.commit();
         }
 
@@ -110,7 +103,9 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
 
         @Override
         public View getView(final int itemPosition, View convertView, ViewGroup parent) {
-            LayoutInflater inflater = (LayoutInflater) mActivity.getLayoutInflater();
+            // TODO: View holder pattern
+
+            LayoutInflater inflater = mActivity.getLayoutInflater();
             View view = inflater.inflate(R.layout.reminder_item, null);
 
             final EventReminder item = items.get(itemPosition);
@@ -119,12 +114,12 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
             final ArrayAdapter<Pair> typeAdapter = new ArrayAdapter<Pair>(mActivity, android.R.layout.simple_list_item_1, reminderTypes);
             typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             typeSpinner.setAdapter(typeAdapter);
-            typeSpinner.setSelection(getSpinnerPos(reminderTypes, item.reminderType));
+            typeSpinner.setSelection(getSpinnerPos(reminderTypes, item.getReminderType()));
             typeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
                     Pair type = typeAdapter.getItem(spinnerPosition);
-                    item.reminderType = type.getValue();
+                    item.setReminderType(type.getValue());
                 }
 
                 @Override
@@ -135,12 +130,12 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
             final ArrayAdapter<Pair> timesAdapter = new ArrayAdapter<Pair>(mActivity, android.R.layout.simple_list_item_1, reminderTimes);
             timesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             timeSpinner.setAdapter(timesAdapter);
-            timeSpinner.setSelection(getSpinnerPos(reminderTimes, item.minutesBefore));
+            timeSpinner.setSelection(getSpinnerPos(reminderTimes, item.getMinutesBefore()));
             timeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
                     Pair time = timesAdapter.getItem(spinnerPosition);
-                    item.minutesBefore = time.getValue();
+                    item.setMinutesBefore(time.getValue());
                 }
 
                 @Override
@@ -206,34 +201,9 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
         }
     }
 
-    public static class EventReminder {
-        public static String SEPARATOR = ";";
-        public int reminderType;
-        public int minutesBefore;
-
-        public EventReminder(int reminderType, int minutesBefore) {
-            this.reminderType = reminderType;
-            this.minutesBefore = minutesBefore;
-        }
-
-        public EventReminder() {
-            this(CalendarContract.Reminders.METHOD_DEFAULT, 30);
-        }
-
-        @Override
-        public int hashCode() {
-            return reminderType * 51 + minutesBefore * 37;
-        }
-
-        @Override
-        public String toString() {
-            return reminderType + SEPARATOR + minutesBefore;
-        }
-    }
-
     private static class Pair {
-        String display;
-        int value;
+        private String display;
+        private int value;
 
         public Pair(String display, int value) {
             this.display = display;
