@@ -50,7 +50,7 @@ public class SchedulerTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... params) {
         try {
-            Document doc = Jsoup.connect("http://codeforces.com/contests").timeout(1000 * 60).get();
+            Document doc = Jsoup.connect("http://codeforces.com/contests").timeout(1000 * 30).get();
 
             Elements tables = doc.getElementsByTag("table");
             Element upcoming_contests = tables.get(0);
@@ -72,10 +72,24 @@ public class SchedulerTask extends AsyncTask<Void, Void, Void> {
                 long startMillis = getStartMillis(startString);
                 long endMillis = getEndMillis(startMillis, durationString);
 
-                if (checkEventPreferences(eventName) && !eventExists(eventName, startMillis, endMillis)) {
+                Cursor existingEvents = getExistingEventsCursor(eventName);
+                existingEvents.moveToFirst();
+                if (existingEvents.getCount() > 0) {
+                    // Should only be one event with same name
+                    if (wasRescheduled(existingEvents, startMillis, endMillis)) {
+                        // Update existing event entry, do not insert again
+                        updateEvent(existingEvents.getLong(existingEvents.getColumnIndex(CalendarContract.Events._ID)),
+                                startMillis, endMillis, eventName);
+                    }
+                    existingEvents.close();
+                    continue;
+                }
+                existingEvents.close();
+
+                if (checkEventPreferences(eventName)) {
                     Uri event = insertEvent(eventName, startMillis, endMillis);
-                    long eventID = Long.parseLong(event.getLastPathSegment());
-                    insertAllReminders(eventID);
+                    long eventId = Long.parseLong(event.getLastPathSegment());
+                    insertAllReminders(eventId);
                 }
             }
         } catch (Exception e) {
@@ -108,23 +122,27 @@ public class SchedulerTask extends AsyncTask<Void, Void, Void> {
         return end.getTimeInMillis();
     }
 
-    private boolean eventExists(String name, long startMillis, long endMillis) {
+    private Cursor getExistingEventsCursor(String eventName) {
         ContentResolver cr = context.getContentResolver();
         String[] projection = {};
         String selection = CalendarContract.Events.TITLE + "=? AND " +
-                CalendarContract.Events.DTSTART + "=? AND " +
-                CalendarContract.Events.DTEND + "=? AND " +
                 CalendarContract.Events.CALENDAR_ID + "=?";
-        String[] args = { name, startMillis + "", endMillis + "", getCalendarId() + ""};
+        String[] args = { eventName, getCalendarId() + ""};
 
+        return cr.query(CalendarContract.Events.CONTENT_URI, projection, selection, args, null);
+    }
 
-        Cursor c = cr.query(CalendarContract.Events.CONTENT_URI, projection, selection, args, null);
-        boolean exists = c.getCount() > 0;
-        c.close();
+    private boolean wasRescheduled(Cursor existingEvents, long startMillis, long endMillis) {
+        boolean ans = existingEvents.getLong(existingEvents.getColumnIndex(CalendarContract.Events.DTSTART)) != startMillis
+                || existingEvents.getLong(existingEvents.getColumnIndex(CalendarContract.Events.DTEND)) != endMillis;
 
-        if (exists) Log.i(MainActivity.TAG, name + " event already exists!");
+        if (ans) {
+            Log.i(MainActivity.TAG, existingEvents.getString(existingEvents.getColumnIndex(CalendarContract.Events.TITLE)) + " event was rescheduled!");
+        } else {
+            Log.i(MainActivity.TAG, existingEvents.getString(existingEvents.getColumnIndex(CalendarContract.Events.TITLE)) + " event is already scheduled correctly!");
+        }
 
-        return exists;
+        return ans;
     }
 
     private Uri insertEvent(String name, long startMillis, long endMillis) {
@@ -144,15 +162,28 @@ public class SchedulerTask extends AsyncTask<Void, Void, Void> {
         return event;
     }
 
-    private void insertReminder(long eventID, int reminderType, int minutes) {
+    private void updateEvent(long eventId, long startMillis, long endMillis, String eventName) {
+        ContentResolver cr = context.getContentResolver();
+        ContentValues values = new ContentValues();
+        values.put(CalendarContract.Events.DTSTART, startMillis);
+        values.put(CalendarContract.Events.DTEND, endMillis);
+        String where = CalendarContract.Events._ID + "=?";
+        String[] args = { eventId + "" };
+
+        cr.update(CalendarContract.Events.CONTENT_URI, values, where, args);
+
+        Log.i(MainActivity.TAG, eventName + " event time updated!");
+    }
+
+    private void insertReminder(long eventId, int reminderType, int minutes) {
         ContentResolver cr = context.getContentResolver();
         ContentValues values = new ContentValues();
         values.put(CalendarContract.Reminders.MINUTES, minutes);
-        values.put(CalendarContract.Reminders.EVENT_ID, eventID);
+        values.put(CalendarContract.Reminders.EVENT_ID, eventId);
         values.put(CalendarContract.Reminders.METHOD, reminderType);
 
         cr.insert(CalendarContract.Reminders.CONTENT_URI, values);
-        Log.i(MainActivity.TAG, "Event " + eventID + ": " + minutes + " reminder inserted!");
+        Log.i(MainActivity.TAG, "Event " + eventId + ": " + minutes + " reminder inserted!");
     }
 
     private void insertAllReminders(long eventId) {
