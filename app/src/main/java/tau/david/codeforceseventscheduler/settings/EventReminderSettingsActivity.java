@@ -27,7 +27,7 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_event_notification_settings);
+        setContentView(R.layout.activity_event_reminder_settings);
 
         getFragmentManager()
                 .beginTransaction()
@@ -101,56 +101,78 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
             return -1;
         }
 
+        private static class ViewHolder {
+            Spinner reminderTypeSpinner;
+            Spinner minutesBeforeSpinner;
+            Button deleteButton;
+        }
+
         @Override
-        public View getView(final int itemPosition, View convertView, ViewGroup parent) {
-            // TODO: View holder pattern
+        public View getView(int itemPosition, View convertView, ViewGroup parent) {
+            View view = convertView;
+            ViewHolder holder = null;
 
-            LayoutInflater inflater = mActivity.getLayoutInflater();
-            View view = inflater.inflate(R.layout.reminder_item, null);
+            if (view == null) {
+                LayoutInflater inflater = mActivity.getLayoutInflater();
+                view = inflater.inflate(R.layout.event_reminder_item, null);
+                holder = new ViewHolder();
 
-            final EventReminder item = items.get(itemPosition);
+                final EventReminder item = items.get(itemPosition);
 
-            final Spinner typeSpinner = (Spinner) view.findViewById(R.id.reminder_type_spinner);
-            final ArrayAdapter<Pair> typeAdapter = new ArrayAdapter<Pair>(mActivity, android.R.layout.simple_list_item_1, reminderTypes);
-            typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            typeSpinner.setAdapter(typeAdapter);
-            typeSpinner.setSelection(getSpinnerPos(reminderTypes, item.getReminderType()));
-            typeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
-                    Pair type = typeAdapter.getItem(spinnerPosition);
-                    item.setReminderType(type.getValue());
-                }
+                final Spinner typeSpinner = (Spinner) view.findViewById(R.id.reminder_type_spinner);
+                final ArrayAdapter<Pair> typeAdapter = new ArrayAdapter<Pair>(mActivity, android.R.layout.simple_list_item_1, reminderTypes);
+                typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                typeSpinner.setAdapter(typeAdapter);
+                typeSpinner.setSelection(getSpinnerPos(reminderTypes, item.getReminderType()));
+                typeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
+                        EventReminder currItem = items.get((Integer) typeSpinner.getTag());
+                        Pair type = typeAdapter.getItem(spinnerPosition);
+                        currItem.setReminderType(type.getValue());
+                    }
 
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) { }
-            });
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) { }
+                });
 
-            final Spinner timeSpinner = (Spinner) view.findViewById(R.id.reminder_time_spinner);
-            final ArrayAdapter<Pair> timesAdapter = new ArrayAdapter<Pair>(mActivity, android.R.layout.simple_list_item_1, reminderTimes);
-            timesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            timeSpinner.setAdapter(timesAdapter);
-            timeSpinner.setSelection(getSpinnerPos(reminderTimes, item.getMinutesBefore()));
-            timeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
-                    Pair time = timesAdapter.getItem(spinnerPosition);
-                    item.setMinutesBefore(time.getValue());
-                }
+                final Spinner timeSpinner = (Spinner) view.findViewById(R.id.reminder_time_spinner);
+                final ArrayAdapter<Pair> timesAdapter = new ArrayAdapter<Pair>(mActivity, android.R.layout.simple_list_item_1, reminderTimes);
+                timesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                timeSpinner.setAdapter(timesAdapter);
+                timeSpinner.setSelection(getSpinnerPos(reminderTimes, item.getMinutesBefore()));
+                timeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
+                        EventReminder currItem = items.get((Integer) timeSpinner.getTag());
+                        Pair time = timesAdapter.getItem(spinnerPosition);
+                        currItem.setMinutesBefore(time.getValue());
+                    }
 
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) { }
-            });
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) { }
+                });
 
+                final Button delete = (Button) view.findViewById(R.id.delete_reminder_button);
+                delete.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        items.remove((int) delete.getTag());
+                        notifyDataSetChanged();
+                    }
+                });
 
-            Button delete = (Button) view.findViewById(R.id.delete_reminder_button);
-            delete.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    items.remove(itemPosition);
-                    notifyDataSetChanged();
-                }
-            });
+                holder.reminderTypeSpinner = typeSpinner;
+                holder.minutesBeforeSpinner = timeSpinner;
+                holder.deleteButton = delete;
+                view.setTag(holder);
+            } else {
+                holder = (ViewHolder) view.getTag();
+            }
+
+            holder.reminderTypeSpinner.setTag(itemPosition);
+            holder.minutesBeforeSpinner.setTag(itemPosition);
+            holder.deleteButton.setTag(itemPosition);
 
             return view;
         }
@@ -230,7 +252,7 @@ public class EventReminderSettingsActivity extends AppCompatActivity {
             LayoutInflater inflater = getActivity().getLayoutInflater();
             adapter = new EventReminderListAdapter(getActivity());
 
-            View footer = inflater.inflate(R.layout.activity_event_notification_footer, null);
+            View footer = inflater.inflate(R.layout.event_reminder_list_footer, null);
             Button add = (Button) footer.findViewById(R.id.button_add_new_notification);
             add.setOnClickListener(new View.OnClickListener() {
                 @Override
